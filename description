@@ -1,0 +1,10 @@
+Name: JProver
+Title: A theorem prover for first-order intuitionistic logic
+Author: Huang Guan-Shieng
+Institution: LRI, Orsay
+Description: JProver is a theorem prover for first-order intuitionistic logic.
+It is originally implemented by Stephan Schmitt and then integrated into
+MetaPRL by Aleksey Nogin. After this, Huang Guan-Shieng extracted the
+necessary ML-codes from MetaPRL and then adapted it to Coq.
+Keywords: Decision procedures, First-order logic, Intuitionistic logic, Theorem proving, Proof search
+Category: Miscellaneous/Coq Extensions and Computer Science/Decision Procedures

@@ -1,0 +1,8 @@
+-R . JProver
+JProver.v
+opname.ml
+jtunify.ml
+jterm.ml
+jlogic.ml
+jall.ml
+jprover.ml
