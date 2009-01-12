@@ -21,8 +21,8 @@
 # This Makefile may take 3 arguments passed as environment variables:
 #   - COQBIN to specify the directory where Coq binaries resides;
 #   - CAMLBIN and CAMLP4BIN to give the path for the OCaml and Camlp4/5 binaries.
-COQLIB:=$(shell $(COQBIN)coqtop -where)
-CAMLP4:=$(shell $(COQBIN)coqtop -config | awk -F = '/CAMLP4=/{print $$2}')
+COQLIB:=$(shell $(COQBIN)coqtop -where | sed -e 's/\\/\\\\/g')
+CAMLP4:="$(shell $(COQBIN)coqtop -config | awk -F = '/CAMLP4=/{print $$2}')"
 ifndef CAMLP4BIN
   CAMLP4BIN:=$(CAMLBIN)
 endif
@@ -102,7 +102,7 @@ CMXFILES:=$(MLFILES:.ml=.cmx)
 CMXSFILES:=$(MLFILES:.ml=.cmxs)
 OFILES:=$(MLFILES:.ml=.o)
 
-all: $(VOFILES) $(CMOFILES) $(CMXSFILES) 
+all: $(VOFILES) $(CMOFILES) 
 spec: $(VIFILES)
 
 gallina: $(GFILES)
@@ -156,7 +156,7 @@ all-gal.pdf: $(VFILES)
 	$(CAMLOPTC) $(ZDEBUG) $(ZFLAGS) $(PP) -impl $<
 
 %.ml.d: %.ml
-	$(CAMLBIN)ocamldep -slash $(ZFLAGS) $(PP) -impl "$<" > "$@"
+	$(CAMLBIN)ocamldep -slash $(COQSRCLIBS) $(PP) "$<" > "$@"
 
 %.vo %.glob: %.v
 	$(COQC) $(COQDEBUG) $(COQFLAGS) $*
@@ -197,9 +197,6 @@ install:
 	 install -D $$i $(COQLIB)/user-contrib/JProver/$$i; \
 	 done)
 	(for i in $(CMIFILES); do \
-	 install -D $$i $(COQLIB)/user-contrib/JProver/$$i; \
-	 done)
-	(for i in $(CMXSFILES); do \
 	 install -D $$i $(COQLIB)/user-contrib/JProver/$$i; \
 	 done)
 
