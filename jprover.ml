@@ -146,13 +146,13 @@ let new_acounter =
     fun () -> incr actr;!actr
 
 let is_coq_forall ct =
-  match TR.kind_of_term (RO.whd_betaiota ct) with
+  match TR.kind_of_term (RO.whd_betaiota Evd.empty ct) with
     | TR.Prod (_,_,b) -> Termops.dependent (TR.mkRel 1) b
     | _  -> false
 
 (* return the bounded variable (as a string) and the bounded term *)
 let dest_coq_forall ct =
-  match TR.kind_of_term (RO.whd_betaiota ct) with
+  match TR.kind_of_term (RO.whd_betaiota Evd.empty ct) with
     | TR.Prod (_,_,b) ->
         let x ="jp_"^(string_of_int (new_counter())) in
         let v = TR.mkVar (N.id_of_string x) in
@@ -164,7 +164,7 @@ let dest_coq_forall ct =
 
 (* Apply [ct] to [t]: *)
 let sAPP ct t =
-  match TR.kind_of_term (RO.whd_betaiota ct) with
+  match TR.kind_of_term (RO.whd_betaiota Evd.empty ct) with
     | TR.Prod (_,_,b) ->
         let c = TR.subst1 t b in
             c
