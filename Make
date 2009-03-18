@@ -6,3 +6,4 @@ jterm.ml
 jlogic.ml
 jall.ml
 jprover.ml
+-byte

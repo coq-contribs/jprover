@@ -35,19 +35,31 @@ CAMLP4LIB:=$(shell $(CAMLP4BIN)$(CAMLP4) -where)
 #                        #
 ##########################
 
-OCAMLLIBS:=-I $(CAMLP4LIB) 
+OCAMLLIBS:=
 COQSRCLIBS:=-I $(COQLIB)/kernel -I $(COQLIB)/lib \
   -I $(COQLIB)/library -I $(COQLIB)/parsing \
   -I $(COQLIB)/pretyping -I $(COQLIB)/interp \
   -I $(COQLIB)/proofs -I $(COQLIB)/tactics \
-  -I $(COQLIB)/toplevel -I $(COQLIB)/contrib/cc -I $(COQLIB)/contrib/dp \
-  -I $(COQLIB)/contrib/extraction -I $(COQLIB)/contrib/field \
-  -I $(COQLIB)/contrib/firstorder -I $(COQLIB)/contrib/fourier \
-  -I $(COQLIB)/contrib/funind -I $(COQLIB)/contrib/interface \
-  -I $(COQLIB)/contrib/micromega -I $(COQLIB)/contrib/omega \
-  -I $(COQLIB)/contrib/ring -I $(COQLIB)/contrib/romega \
-  -I $(COQLIB)/contrib/rtauto -I $(COQLIB)/contrib/setoid_ring \
-  -I $(COQLIB)/contrib/subtac -I $(COQLIB)/contrib/xml
+  -I $(COQLIB)/toplevel \
+  -I $(COQLIB)/contrib/cc \
+  -I $(COQLIB)/contrib/dp \
+  -I $(COQLIB)/contrib/extraction \
+  -I $(COQLIB)/contrib/field \
+  -I $(COQLIB)/contrib/firstorder \
+  -I $(COQLIB)/contrib/fourier \
+  -I $(COQLIB)/contrib/funind \
+  -I $(COQLIB)/contrib/groebner \
+  -I $(COQLIB)/contrib/interface \
+  -I $(COQLIB)/contrib/micromega \
+  -I $(COQLIB)/contrib/omega \
+  -I $(COQLIB)/contrib/quote \
+  -I $(COQLIB)/contrib/ring \
+  -I $(COQLIB)/contrib/romega \
+  -I $(COQLIB)/contrib/rtauto \
+  -I $(COQLIB)/contrib/setoid_ring \
+  -I $(COQLIB)/contrib/subtac \
+  -I $(COQLIB)/contrib/subtac/test \
+  -I $(COQLIB)/contrib/xml
 COQLIBS:= -R . JProver
 COQDOCLIBS:=-R . JProver
 
@@ -58,7 +70,7 @@ COQDOCLIBS:=-R . JProver
 ##########################
 
 ZFLAGS=$(OCAMLLIBS) $(COQSRCLIBS) -I $(CAMLP4LIB)
-OPT:=
+override OPT:=-byte
 COQFLAGS:=-q $(OPT) $(COQLIBS) $(OTHERFLAGS) $(COQ_XML)
 ifdef CAMLBIN
   COQMKTOPFLAGS:=-camlbin $(CAMLBIN) -camlp4bin $(CAMLP4BIN)
@@ -68,8 +80,8 @@ COQDEP:=$(COQBIN)coqdep -c
 GALLINA:=$(COQBIN)gallina
 COQDOC:=$(COQBIN)coqdoc
 COQMKTOP:=$(COQBIN)coqmktop
-CAMLC:=$(CAMLBIN)ocamlc.opt -rectypes
-CAMLOPTC:=$(CAMLBIN)ocamlopt.opt -rectypes
+CAMLC:=$(CAMLBIN)ocamlc.opt -c -rectypes
+CAMLOPTC:=$(CAMLBIN)ocamlopt.opt -c -rectypes
 CAMLLINK:=$(CAMLBIN)ocamlc.opt -rectypes
 CAMLOPTLINK:=$(CAMLBIN)ocamlopt.opt -rectypes
 GRAMMARS:=grammar.cma
@@ -155,8 +167,11 @@ all-gal.pdf: $(VFILES)
 %.cmx: %.ml4
 	$(CAMLOPTC) $(ZDEBUG) $(ZFLAGS) $(PP) -impl $<
 
+%.cmxs: %.ml4
+	$(CAMLOPTC) $(ZDEBUG) $(ZFLAGS) -shared -o $@ $(PP) -impl $<
+
 %.ml.d: %.ml
-	$(CAMLBIN)ocamldep -slash $(COQSRCLIBS) $(PP) "$<" > "$@"
+	$(CAMLBIN)ocamldep -slash $(OCAMLLIBS) $(PP) "$<" > "$@"
 
 %.vo %.glob: %.v
 	$(COQC) $(COQDEBUG) $(COQFLAGS) $*
@@ -186,7 +201,7 @@ byte:
 	$(MAKE) all "OPT:=-byte"
 
 opt:
-	$(MAKE) all "OPT:=-opt"
+	$(MAKE) all "OPT:=-byte"
 
 install:
 	mkdir -p $(COQLIB)/user-contrib
@@ -203,7 +218,7 @@ install:
 clean:
 	rm -f $(CMOFILES) $(CMIFILES) $(CMXFILES) $(CMXSFILES) $(OFILES) $(VOFILES) $(VIFILES) $(GFILES) $(MLFILES:.ml=.cmo) $(MLFILES:.ml=.cmx) *~
 	rm -f all.ps all-gal.ps all.pdf all-gal.pdf all.glob $(VFILES:.v=.glob) $(HTMLFILES) $(GHTMLFILES) $(VFILES:.v=.tex) $(VFILES:.v=.g.tex) $(VFILES:.v=.v.d)
-	rm -f $(CMOFILES) $(MLFILES:.ml=.cmi) $(MLFILES:.ml=.ml.d)
+	rm -f $(CMOFILES) $(MLFILES:.ml=.cmi) $(MLFILES:.ml=.ml.d) $(MLFILES:.ml=.cmx) $(MLFILES:.ml=.o)
 	- rm -rf html
 
 archclean:
