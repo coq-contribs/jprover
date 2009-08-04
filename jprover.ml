@@ -69,7 +69,7 @@ let print_constr_pair op c1 c2 =
 (* [is_coq_???] : testing functions *)
 (* [dest_coq_???] : destructors     *)
 
-let is_coq_true ct = (HP.is_unit_type ct) && not (HP.is_equation ct)
+let is_coq_true = HP.is_unit_type
 
 let is_coq_false = HP.is_empty_type
 
