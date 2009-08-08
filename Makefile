@@ -35,7 +35,7 @@ CAMLP4LIB:=$(shell $(CAMLP4BIN)$(CAMLP4) -where)
 #                        #
 ##########################
 
-OCAMLLIBS:=-I $(CAMLP4LIB) 
+OCAMLLIBS:=
 COQSRCLIBS:=-I $(COQLIB)/kernel -I $(COQLIB)/lib \
   -I $(COQLIB)/library -I $(COQLIB)/parsing \
   -I $(COQLIB)/pretyping -I $(COQLIB)/interp \
@@ -68,8 +68,8 @@ COQDEP:=$(COQBIN)coqdep -c
 GALLINA:=$(COQBIN)gallina
 COQDOC:=$(COQBIN)coqdoc
 COQMKTOP:=$(COQBIN)coqmktop
-CAMLC:=$(CAMLBIN)ocamlc.opt -rectypes
-CAMLOPTC:=$(CAMLBIN)ocamlopt.opt -rectypes
+CAMLC:=$(CAMLBIN)ocamlc.opt -c -rectypes
+CAMLOPTC:=$(CAMLBIN)ocamlopt.opt -c -rectypes
 CAMLLINK:=$(CAMLBIN)ocamlc.opt -rectypes
 CAMLOPTLINK:=$(CAMLBIN)ocamlopt.opt -rectypes
 GRAMMARS:=grammar.cma
@@ -99,7 +99,6 @@ MLFILES:=opname.ml\
 CMOFILES:=$(MLFILES:.ml=.cmo)
 CMIFILES:=$(MLFILES:.ml=.cmi)
 CMXFILES:=$(MLFILES:.ml=.cmx)
-CMXSFILES:=$(MLFILES:.ml=.cmxs)
 OFILES:=$(MLFILES:.ml=.o)
 
 all: $(VOFILES) $(CMOFILES) $(CMXSFILES) 
@@ -141,13 +140,10 @@ all-gal.pdf: $(VFILES)
 	$(CAMLC) $(ZDEBUG) $(ZFLAGS) $<
 
 %.cmo: %.ml
-	$(CAMLC) $(ZDEBUG) $(ZFLAGS) -c $(PP) $<
+	$(CAMLC) $(ZDEBUG) $(ZFLAGS) $(PP) $<
 
 %.cmx: %.ml
-	$(CAMLOPTC) $(ZDEBUG) $(ZFLAGS) -c $(PP) $<
-
-%.cmxs: %.ml
-	$(CAMLOPTC) $(ZDEBUG) $(ZFLAGS) -shared -o $@ $(PP) $<
+	$(CAMLOPTC) $(ZDEBUG) $(ZFLAGS) $(PP) $<
 
 %.cmo: %.ml4
 	$(CAMLC) $(ZDEBUG) $(ZFLAGS) $(PP) -impl $<
@@ -156,7 +152,7 @@ all-gal.pdf: $(VFILES)
 	$(CAMLOPTC) $(ZDEBUG) $(ZFLAGS) $(PP) -impl $<
 
 %.ml.d: %.ml
-	$(CAMLBIN)ocamldep -slash $(COQSRCLIBS) $(PP) "$<" > "$@"
+	$(CAMLBIN)ocamldep -slash $(COQSRCLIBS) $(OCAMLLIBS) $(PP) "$<" > "$@"
 
 %.vo %.glob: %.v
 	$(COQC) -dump-glob $*.glob $(COQDEBUG) $(COQFLAGS) $*
@@ -206,8 +202,7 @@ install:
 clean:
 	rm -f $(VOFILES) $(VIFILES) $(GFILES) *~
 	rm -f all.ps all-gal.ps all.pdf all-gal.pdf all.glob $(VFILES:.v=.glob) $(HTMLFILES) $(GHTMLFILES) $(VFILES:.v=.tex) $(VFILES:.v=.g.tex) $(VFILES:.v=.v.d)
-	rm -f $(CMOFILES) $(MLFILES:.ml=.cmi) $(MLFILES:.ml=.ml.d)
-	rm -f $(CMXSFILES) $(CMXSFILES:.cmxs=.o)
+	rm -f $(CMOFILES) $(MLFILES:.ml=.cmi) $(MLFILES:.ml=.ml.d) $(MLFILES:.ml=.cmx) $(MLFILES:.ml=.o)
 	- rm -rf html
 
 archclean:
