@@ -207,16 +207,20 @@ opt:
 install:
 	mkdir -p $(COQLIB)/user-contrib
 	(for i in $(VOFILES); do \
-	 install -D $$i $(COQLIB)/user-contrib/JProver/$$i; \
+	 install -d `dirname $(COQLIB)/user-contrib/JProver/$$i`; \
+	 install $$i $(COQLIB)/user-contrib/JProver/$$i; \
 	 done)
 	(for i in $(CMOFILES); do \
-	 install -D $$i $(COQLIB)/user-contrib/JProver/$$i; \
+	 install -d `dirname $(COQLIB)/user-contrib/JProver/$$i`; \
+	 install $$i $(COQLIB)/user-contrib/JProver/$$i; \
 	 done)
 	(for i in $(CMIFILES); do \
-	 install -D $$i $(COQLIB)/user-contrib/JProver/$$i; \
+	 install -d `dirname $(COQLIB)/user-contrib/JProver/$$i`; \
+	 install $$i $(COQLIB)/user-contrib/JProver/$$i; \
 	 done)
 	(for i in $(CMXSFILES); do \
-	 install -D $$i $(COQLIB)/user-contrib/JProver/$$i; \
+	 install -d `dirname $(COQLIB)/user-contrib/JProver/$$i`; \
+	 install $$i $(COQLIB)/user-contrib/JProver/$$i; \
 	 done)
 
 clean:
