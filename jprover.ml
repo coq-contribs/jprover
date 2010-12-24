@@ -16,7 +16,7 @@ module TR = Term
 module PR = Printer
 module RO = Reductionops
 module UT = Util
-module RA = Rawterm
+module RA = Glob_term
 
 module J=JA.JProver(JLogic)         (* the JProver *)
 
