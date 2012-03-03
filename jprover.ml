@@ -15,7 +15,6 @@ module HP = Hipattern
 module TR = Term
 module PR = Printer
 module RO = Reductionops
-module UT = Util
 module RA = Glob_term
 
 module J=JA.JProver(JLogic)         (* the JProver *)
@@ -501,10 +500,10 @@ let jp limits gls =
                   Pp.msgnl (Pp.str "Proof is built.");
                   do_coq_proof tr gls
                end
-               else UT.error "Cannot reconstruct proof tree from JProver."
+               else Errors.error "Cannot reconstruct proof tree from JProver."
         with e -> Pp.msgnl (Pp.str "JProver fails to prove this:");
                   JT.print_error_msg e;
-                  UT.error "JProver terminated."
+                  Errors.error "JProver terminated."
 
 (* an unfailed generalization procedure *)
 let non_dep_gen b gls =
