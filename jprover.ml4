@@ -10,12 +10,10 @@ module TM = Tacmach
 module N = Names
 module PT = Proof_type
 module HT = Hiddentac
-module PA = Pattern
 module HP = Hipattern
 module TR = Term
 module PR = Printer
 module RO = Reductionops
-module RA = Glob_term
 
 module J=JA.JProver(JLogic)         (* the JProver *)
 
@@ -324,7 +322,7 @@ let short_addr s =
 
 (* and-right *)
 let dyn_andr =
-  T.split RA.NoBindings
+  T.split Misctypes.NoBindings
 
 (* For example, the following implements the [and-left] rule: *)
 let dyn_andl id =   (* [id1]: left child; [id2]: right child *)
@@ -332,10 +330,10 @@ let dyn_andl id =   (* [id1]: left child; [id2]: right child *)
     (TCL.tclTHEN (T.simplest_elim (TR.mkVar (short_addr id))) (T.intros_using [id1;id2]))
 
 let dyn_orr1 =
-  T.left RA.NoBindings
+  T.left Misctypes.NoBindings
 
 let dyn_orr2 =
-  T.right RA.NoBindings
+  T.right Misctypes.NoBindings
 
 let dyn_orl id =
   let id1 = (short_addr (id^"_1")) and id2 = (short_addr (id^"_2")) in
@@ -380,12 +378,12 @@ let dyn_exl id id2 c = (* [c] must be an eigenvariable *)
                (T.intros_using [(N.id_of_string c);(short_addr id2)]))
 
 let dyn_exr t =
-  T.one_constructor 1 (RA.ImplicitBindings [t])
+  T.one_constructor 1 (Misctypes.ImplicitBindings [t])
 
 let dyn_falsel = dyn_negl
 
 let dyn_truer =
-  T.one_constructor 1 RA.NoBindings
+  T.one_constructor 1 Misctypes.NoBindings
 
 (* Do the proof by the guidance of JProver. *)
 
