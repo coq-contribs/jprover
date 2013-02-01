@@ -1,9 +1,14 @@
 -R . JProver
 JProver.v
 opname.ml
+opname.mli
 jtunify.ml
+jtunify.mli
 jterm.ml
+jterm.mli
 jlogic.ml
+jlogic.mli
 jall.ml
-jprover.ml
+jall.mli
+jprover.ml4
 -byte
