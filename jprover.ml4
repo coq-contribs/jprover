@@ -12,6 +12,7 @@ module PT = Proof_type
 module HT = Hiddentac
 module HP = Hipattern
 module TR = Term
+module VR = Vars
 module PR = Printer
 module RO = Reductionops
 
@@ -153,7 +154,7 @@ let dest_coq_forall ct =
     | TR.Prod (_,_,b) ->
         let x ="jp_"^(string_of_int (new_counter())) in
         let v = TR.mkVar (N.id_of_string x) in
-        let c = TR.subst1 v b in    (* substitute de Bruijn variable by [v] *)
+        let c = VR.subst1 v b in    (* substitute de Bruijn variable by [v] *)
 (*i        print_constr_pair "forall" v c; i*)
         (x, c)
     | _  -> jp_error "dest_coq_forall"
@@ -163,7 +164,7 @@ let dest_coq_forall ct =
 let sAPP ct t =
   match TR.kind_of_term (RO.whd_betaiota Evd.empty ct) with
     | TR.Prod (_,_,b) ->
-        let c = TR.subst1 t b in
+        let c = VR.subst1 t b in
             c
     | _  -> jp_error "sAPP"
 
@@ -192,7 +193,7 @@ let dest_coq_exists ct =
              match TR.destLambda la with
                     | (N.Name x,t1,t2) ->
                          let v = TR.mkVar x in
-                         let t3 = TR.subst1 v t2 in
+                         let t3 = VR.subst1 v t2 in
 (*i                            print_constr_pair "exists" v t3; i*)
                             (N.string_of_id x, t3)
                     | _ -> jp_error "dest_coq_exists"
