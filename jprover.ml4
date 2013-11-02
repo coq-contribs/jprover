@@ -328,7 +328,7 @@ let dyn_andr =
 (* For example, the following implements the [and-left] rule: *)
 let dyn_andl id =   (* [id1]: left child; [id2]: right child *)
   let id1 = (short_addr (id^"_1")) and id2 = (short_addr (id^"_2")) in
-    (TCL.tclTHEN (T.simplest_elim (TR.mkVar (short_addr id))) (T.intros_using [id1;id2]))
+    (TCL.New.tclTHEN (T.simplest_elim (TR.mkVar (short_addr id))) (T.intros_using [id1;id2]))
 
 let dyn_orr1 =
   T.left Misctypes.NoBindings
@@ -338,7 +338,7 @@ let dyn_orr2 =
 
 let dyn_orl id =
   let id1 = (short_addr (id^"_1")) and id2 = (short_addr (id^"_2")) in
-    (TCL.tclTHENS (T.simplest_elim (TR.mkVar (short_addr id)))
+    (TCL.New.tclTHENS (T.simplest_elim (TR.mkVar (short_addr id)))
                   [T.intro_using id1; T.intro_using id2])
 
 let dyn_negr id =
@@ -358,7 +358,7 @@ let dyn_impl id gl =
     let (_,b) = dest_coq_impl ct in
       let id2 = (short_addr (id^"_1_2")) in
          (TCL.tclTHENLAST
-            (TCL.tclTHENS (T.cut b) [T.intro_using id2;TCL.tclIDTAC])
+            (TCL.tclTHENS (T.cut b) [Proofview.V82.of_tactic (T.intro_using id2);TCL.tclIDTAC])
          (T.apply_term (TR.mkVar (short_addr id))
                        [TR.mkMeta (Evarutil.new_meta())])) gl
 
@@ -372,10 +372,10 @@ let dyn_alll id id2 t gl =
   let ct = TM.pf_get_hyp_typ gl id' in
     let ct' = Reduction.whd_betadeltaiota (Global.env ()) ct in   (* unfolding *)
     let ta = sAPP ct' t in
-       TCL.tclTHENS (T.cut ta) [T.intro_using id2'; T.apply (TR.mkVar id')] gl
+       TCL.tclTHENS (T.cut ta) [Proofview.V82.of_tactic (T.intro_using id2'); T.apply (TR.mkVar id')] gl
 
 let dyn_exl id id2 c = (* [c] must be an eigenvariable *)
-  (TCL.tclTHEN (T.simplest_elim (TR.mkVar (short_addr id)))
+  (TCL.New.tclTHEN (T.simplest_elim (TR.mkVar (short_addr id)))
                (T.intros_using [(N.id_of_string c);(short_addr id2)]))
 
 let dyn_exr t =
@@ -404,14 +404,14 @@ i*)
      | Orr1 -> dyn_orr1
      | Orr2 -> dyn_orr2
      | Impr -> dyn_impr s1
-     | Impl -> dyn_impl s1
+     | Impl -> Proofview.V82.tactic (dyn_impl s1)
      | Negr -> dyn_negr s1
      | Negl -> dyn_negl s1
      | Allr -> dyn_allr (JT.dest_var t2)
-     | Alll -> dyn_alll s1 s2 (constr_of_jterm t2)
+     | Alll -> Proofview.V82.tactic (dyn_alll s1 s2 (constr_of_jterm t2))
      | Exr  -> dyn_exr (constr_of_jterm t2)
      | Exl  -> dyn_exl s1 s2 (JT.dest_var t2)
-     | Ax -> T.assumption (*i TCL.tclIDTAC i*)
+     | Ax -> Proofview.V82.tactic T.assumption (*i TCL.tclIDTAC i*)
      | Truer -> dyn_truer
      | Falsel -> dyn_falsel s1
      | _ -> jp_error "do_one_step"
@@ -423,10 +423,10 @@ i*)
 let do_coq_proof tr =
  let rec rec_do trs =
     match trs with
-     | JPempty -> TCL.tclIDTAC
+     | JPempty -> Proofview.tclUNIT ()
      | JPAx h -> do_one_step h
-     | JPA (h, t) -> TCL.tclTHEN (do_one_step h) (rec_do t)
-     | JPB (h, left, right) -> TCL.tclTHENS (do_one_step h) [rec_do left; rec_do right]
+     | JPA (h, t) -> TCL.New.tclTHEN (do_one_step h) (rec_do t)
+     | JPB (h, left, right) -> TCL.New.tclTHENS (do_one_step h) [rec_do left; rec_do right]
  in
     rec_do tr
 
@@ -497,7 +497,7 @@ let jp limits gls =
                if (il = []) then
                begin
                   Pp.msgnl (Pp.str "Proof is built.");
-                  do_coq_proof tr gls
+                  Proofview.V82.of_tactic (do_coq_proof tr) gls
                end
                else Errors.error "Cannot reconstruct proof tree from JProver."
         with e -> Pp.msgnl (Pp.str "JProver fails to prove this:");
@@ -543,7 +543,7 @@ let jpn n gls =
                          (jp n)) gls
 
 TACTIC EXTEND jprover
-  [ "jp" natural_opt(n) ] -> [ jpn n ]
+  [ "jp" natural_opt(n) ] -> [ Proofview.V82.tactic (jpn n) ]
 END
 
 (*
