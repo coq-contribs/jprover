@@ -411,7 +411,7 @@ i*)
      | Alll -> Proofview.V82.tactic (dyn_alll s1 s2 (constr_of_jterm t2))
      | Exr  -> dyn_exr (constr_of_jterm t2)
      | Exl  -> dyn_exl s1 s2 (JT.dest_var t2)
-     | Ax -> Proofview.V82.tactic T.assumption (*i TCL.tclIDTAC i*)
+     | Ax -> T.assumption (*i TCL.tclIDTAC i*)
      | Truer -> dyn_truer
      | Falsel -> dyn_falsel s1
      | _ -> jp_error "do_one_step"
