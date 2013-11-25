@@ -9,7 +9,6 @@ module TCL = Tacticals
 module TM = Tacmach
 module N = Names
 module PT = Proof_type
-module HT = Hiddentac
 module HP = Hipattern
 module TR = Term
 module VR = Vars
@@ -343,14 +342,14 @@ let dyn_orl id =
 
 let dyn_negr id =
   let id1 = id^"_1_1" in
-     HT.h_intro (short_addr id1)
+     T.Simple.intro (short_addr id1)
 
 let dyn_negl id =
   T.simplest_elim (TR.mkVar (short_addr id))
 
 let dyn_impr id =
   let id1 = id^"_1_1" in
-     HT.h_intro (short_addr id1)
+     T.Simple.intro (short_addr id1)
 
 let dyn_impl id gl =
   let t = TM.pf_get_hyp_typ gl (short_addr id) in
@@ -363,7 +362,7 @@ let dyn_impl id gl =
                        [TR.mkMeta (Evarutil.new_meta())])) gl
 
 let dyn_allr c =       (* [c] must be an eigenvariable which replaces [v] *)
-  HT.h_intro (N.id_of_string c)
+  T.Simple.intro (N.id_of_string c)
 
 (* [id2] is the path of the instantiated term for [id]*)
 let dyn_alll id id2 t gl =
