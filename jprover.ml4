@@ -357,7 +357,7 @@ let dyn_impl id gl =
     let (_,b) = dest_coq_impl ct in
       let id2 = (short_addr (id^"_1_2")) in
          (TCL.tclTHENLAST
-            (TCL.tclTHENS (T.cut b) [Proofview.V82.of_tactic (T.intro_using id2);TCL.tclIDTAC])
+            (TCL.tclTHENS (Proofview.V82.of_tactic (T.cut b)) [Proofview.V82.of_tactic (T.intro_using id2);TCL.tclIDTAC])
          (T.apply_term (TR.mkVar (short_addr id))
                        [TR.mkMeta (Evarutil.new_meta())])) gl
 
@@ -371,7 +371,7 @@ let dyn_alll id id2 t gl =
   let ct = TM.pf_get_hyp_typ gl id' in
     let ct' = Reduction.whd_betadeltaiota (Global.env ()) ct in   (* unfolding *)
     let ta = sAPP ct' t in
-       TCL.tclTHENS (T.cut ta) [Proofview.V82.of_tactic (T.intro_using id2'); T.apply (TR.mkVar id')] gl
+       TCL.tclTHENS (Proofview.V82.of_tactic (T.cut ta)) [Proofview.V82.of_tactic (T.intro_using id2'); T.apply (TR.mkVar id')] gl
 
 let dyn_exl id id2 c = (* [c] must be an eigenvariable *)
   (TCL.New.tclTHEN (T.simplest_elim (TR.mkVar (short_addr id)))
