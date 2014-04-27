@@ -351,15 +351,21 @@ let dyn_impr id =
   let id1 = id^"_1_1" in
      T.Simple.intro (short_addr id1)
 
-let dyn_impl id gl =
-  let t = TM.pf_get_hyp_typ gl (short_addr id) in
+let dyn_impl id =
+  Proofview.Goal.enter begin fun gl ->
+  let t = TM.New.pf_get_hyp_typ (short_addr id) gl in
     let ct = Reduction.whd_betadeltaiota (Global.env ()) t in   (* unfolding *)
-    let (_,b) = dest_coq_impl ct in
+    let (a,b) = dest_coq_impl ct in
+    let refined = Proofview.Refine.refine begin fun h ->
+      let env = Proofview.Goal.env gl in
+      let (h, e) = Proofview.Refine.new_evar h env a in
+      let c = TR.mkApp (TR.mkVar (short_addr id), [|e|]) in
+      (h, c)
+    end in
       let id2 = (short_addr (id^"_1_2")) in
-         (TCL.tclTHENLAST
-            (TCL.tclTHENS (Proofview.V82.of_tactic (T.cut b)) [Proofview.V82.of_tactic (T.intro_using id2);TCL.tclIDTAC])
-         (T.apply_term (TR.mkVar (short_addr id))
-                       [TR.mkMeta (Evarutil.new_meta())])) gl
+         (TCL.New.tclTHENLAST
+            (TCL.New.tclTHENS (T.cut b) [T.intro_using id2; TCL.New.tclIDTAC]) refined)
+  end
 
 let dyn_allr c =       (* [c] must be an eigenvariable which replaces [v] *)
   T.Simple.intro (N.id_of_string c)
@@ -403,7 +409,7 @@ i*)
      | Orr1 -> dyn_orr1
      | Orr2 -> dyn_orr2
      | Impr -> dyn_impr s1
-     | Impl -> Proofview.V82.tactic (dyn_impl s1)
+     | Impl -> dyn_impl s1
      | Negr -> dyn_negr s1
      | Negl -> dyn_negl s1
      | Allr -> dyn_allr (JT.dest_var t2)
