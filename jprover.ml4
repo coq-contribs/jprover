@@ -1,5 +1,7 @@
 (*i camlp4deps: "parsing/grammar.cma" i*)
 
+DECLARE PLUGIN "jprover"
+
 open Jlogic
 
 module JA = Jall
