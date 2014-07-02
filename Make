@@ -1,3 +1,4 @@
+-I .
 -R . JProver
 JProver.v
 opname.mli
