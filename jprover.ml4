@@ -354,7 +354,7 @@ let dyn_impr id =
      T.Simple.intro (short_addr id1)
 
 let dyn_impl id =
-  Proofview.Goal.enter begin fun gl ->
+  Proofview.Goal.nf_enter begin fun gl ->
   let t = TM.New.pf_get_hyp_typ (short_addr id) gl in
     let ct = Reduction.whd_betadeltaiota (Global.env ()) t in   (* unfolding *)
     let (a,b) = dest_coq_impl ct in
