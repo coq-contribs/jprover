@@ -2,6 +2,8 @@
 
 DECLARE PLUGIN "jprover"
 
+open Sigma.Notations
+open Proofview.Notations
 open Jlogic
 
 module JA = Jall
@@ -354,20 +356,20 @@ let dyn_impr id =
      T.Simple.intro (short_addr id1)
 
 let dyn_impl id =
-  Proofview.Goal.nf_enter begin fun gl ->
+  Proofview.Goal.nf_enter { enter = begin fun gl ->
   let t = TM.New.pf_get_hyp_typ (short_addr id) gl in
     let ct = Reduction.whd_betadeltaiota (Global.env ()) t in   (* unfolding *)
     let (a,b) = dest_coq_impl ct in
-    let refined = Proofview.Refine.refine begin fun sigma ->
+    let refined = Proofview.Refine.refine { run = begin fun sigma ->
       let env = Proofview.Goal.env gl in
-      let (h, e) = Evarutil.new_evar env sigma a in
+      let Sigma (e, h, p) = Evarutil.new_evar env sigma a in
       let c = TR.mkApp (TR.mkVar (short_addr id), [|e|]) in
-      (h, c)
-    end in
+      Sigma (c, h, p)
+    end } in
       let id2 = (short_addr (id^"_1_2")) in
          (TCL.New.tclTHENLAST
             (TCL.New.tclTHENS (T.cut b) [T.intro_using id2; TCL.New.tclIDTAC]) refined)
-  end
+  end }
 
 let dyn_allr c =       (* [c] must be an eigenvariable which replaces [v] *)
   T.Simple.intro (N.id_of_string c)
