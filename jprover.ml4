@@ -12,7 +12,6 @@ module T = Tactics
 module TCL = Tacticals
 module TM = Tacmach
 module N = Names
-module PT = Proof_type
 module HP = Hipattern
 module TR = Term
 module VR = Vars
@@ -547,7 +546,7 @@ let dyn_jp l gls =
 (* one optional integer argument for the multiplicity *)
 let jpn n gls =
   let ls = List.map (fst) (TM.pf_hyps_types gls) in
-  TCL.tclTHEN (TCL.tclTRY T.red_in_concl)
+  TCL.tclTHEN (TCL.tclTRY (Proofview.V82.of_tactic T.red_in_concl))
               (TCL.tclTHEN (unfail_gen (List.map TR.mkVar ls))
                          (jp n)) gls
 
