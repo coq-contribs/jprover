@@ -1,5 +1,7 @@
 (*i camlp4deps: "parsing/grammar.cma" i*)
 
+open Extraargs
+
 DECLARE PLUGIN "jprover"
 
 open Sigma.Notations
