@@ -361,7 +361,7 @@ let dyn_impl id =
   let t = TM.New.pf_get_hyp_typ (short_addr id) gl in
     let ct = Reduction.whd_betadeltaiota (Global.env ()) t in   (* unfolding *)
     let (a,b) = dest_coq_impl ct in
-    let refined = Proofview.Refine.refine { run = begin fun sigma ->
+    let refined = Refine.refine { run = begin fun sigma ->
       let env = Proofview.Goal.env gl in
       let Sigma (e, h, p) = Evarutil.new_evar env sigma a in
       let c = TR.mkApp (TR.mkVar (short_addr id), [|e|]) in
