@@ -53,7 +53,7 @@ let mbreak s = Format.print_flush (); print_string ("-break at: "^s);
 let jp_error re = raise (JT.RefineError ("jprover", JT.StringError re))
 
 (* print Coq constructor *)
-let print_constr ct = Pp.ppnl (PR.pr_lconstr ct); Format.print_flush ()
+let print_constr ct = Feedback.msg_debug (PR.pr_lconstr ct); Format.print_flush ()
 
 let rec print_constr_list = function
   |  [] -> ()
@@ -506,11 +506,11 @@ let jp limits gls =
             let (il,tr) = build_jptree p in
                if (il = []) then
                begin
-                  Pp.msgnl (Pp.str "Proof is built.");
+                  Feedback.msg_info (Pp.str "Proof is built.");
                   Proofview.V82.of_tactic (do_coq_proof tr) gls
                end
                else Errors.error "Cannot reconstruct proof tree from JProver."
-        with e -> Pp.msgnl (Pp.str "JProver fails to prove this:");
+        with e -> Feedback.msg_error (Pp.str "JProver fails to prove this:");
                   JT.print_error_msg e;
                   Errors.error "JProver terminated."
 
@@ -518,7 +518,7 @@ let jp limits gls =
 let non_dep_gen b gls =
   let concl = TM.pf_concl gls in
       if (not (Termops.dependent b concl)) then
-         T.generalize [b] gls
+        Proofview.V82.of_tactic (T.generalize [b]) gls
       else
          TCL.tclIDTAC gls
 
