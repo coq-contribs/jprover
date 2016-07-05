@@ -250,7 +250,7 @@ let rec parsing2 c =        (* for function symbols, variables, constants *)
 
 (* the main parsing function *)
 let rec parsing c =
-    let ct = Reduction.whd_betadeltaiota (Global.env ()) c in
+    let ct = Reduction.whd_all (Global.env ()) c in
 (*    let ct = Reduction.whd_betaiotazeta (Global.env ()) c in *)
     if is_coq_true ct then
        JT.true_
@@ -359,7 +359,7 @@ let dyn_impr id =
 let dyn_impl id =
   Proofview.Goal.nf_enter { enter = begin fun gl ->
   let t = TM.New.pf_get_hyp_typ (short_addr id) gl in
-    let ct = Reduction.whd_betadeltaiota (Global.env ()) t in   (* unfolding *)
+    let ct = Reduction.whd_all (Global.env ()) t in   (* unfolding *)
     let (a,b) = dest_coq_impl ct in
     let refined = Refine.refine { run = begin fun sigma ->
       let env = Proofview.Goal.env gl in
@@ -380,7 +380,7 @@ let dyn_alll id id2 t gl =
   let id' = short_addr id in
   let id2' = short_addr id2 in
   let ct = TM.pf_get_hyp_typ gl id' in
-    let ct' = Reduction.whd_betadeltaiota (Global.env ()) ct in   (* unfolding *)
+    let ct' = Reduction.whd_all (Global.env ()) ct in   (* unfolding *)
     let ta = sAPP ct' t in
        Proofview.V82.of_tactic (TCL.New.tclTHENS (T.cut ta) [T.intro_using id2'; T.apply (TR.mkVar id')]) gl
 
@@ -509,10 +509,10 @@ let jp limits gls =
                   Feedback.msg_info (Pp.str "Proof is built.");
                   Proofview.V82.of_tactic (do_coq_proof tr) gls
                end
-               else Errors.error "Cannot reconstruct proof tree from JProver."
+               else CErrors.error "Cannot reconstruct proof tree from JProver."
         with e -> Feedback.msg_error (Pp.str "JProver fails to prove this:");
                   JT.print_error_msg e;
-                  Errors.error "JProver terminated."
+                  CErrors.error "JProver terminated."
 
 (* an unfailed generalization procedure *)
 let non_dep_gen b gls =
