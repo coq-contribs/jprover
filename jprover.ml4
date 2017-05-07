@@ -17,6 +17,7 @@ module TM = Tacmach
 module N = Names
 module HP = Hipattern
 module TR = Term
+module EC = EConstr
 module VR = Vars
 module PR = Printer
 module RO = Reductionops
@@ -77,8 +78,8 @@ let is_coq_true = HP.is_unit_type
 let is_coq_false = HP.is_empty_type
 
 (* return two subterms *)
-let dest_coq_and ct =
-    match (HP.match_with_conjunction ct) with
+let dest_coq_and sigma ct =
+    match (HP.match_with_conjunction sigma ct) with
       | Some (hdapp,args) ->
 (*i            print_constr hdapp; print_constr_list args; i*)
             begin
@@ -90,13 +91,13 @@ let dest_coq_and ct =
             end
       | None -> jp_error "dest_coq_and"
 
-let is_coq_or ct =
-  HP.is_disjunction ~strict:true ct
-  && List.length (snd (TR.decompose_app ct)) = 2
+let is_coq_or sigma ct =
+  HP.is_disjunction sigma ~strict:true ct
+  && List.length (snd (EC.decompose_app sigma ct)) = 2
 
 (* return two subterms *)
-let dest_coq_or ct =
-    match (HP.match_with_disjunction ct) with
+let dest_coq_or sigma ct =
+    match (HP.match_with_disjunction sigma ct) with
       | Some (hdapp,args) ->
 (*i            print_constr hdapp; print_constr_list args; i*)
             begin
@@ -110,8 +111,8 @@ let dest_coq_or ct =
 
 let is_coq_not = HP.is_nottype
 
-let dest_coq_not ct =
-    match (HP.match_with_nottype ct) with
+let dest_coq_not sigma ct =
+    match (HP.match_with_nottype sigma ct) with
       | Some (hdapp,arg) ->
 (*i            print_constr hdapp; print_constr args; i*)
 (*i            print_string "not ";
@@ -120,14 +121,14 @@ let dest_coq_not ct =
       | None -> jp_error "dest_coq_not"
 
 
-let is_coq_impl ct =
-  match TR.kind_of_term ct with
-    | TR.Prod (_,_,b) -> (not (Termops.dependent (TR.mkRel 1) b))
+let is_coq_impl sigma ct =
+  match EC.kind sigma ct with
+    | TR.Prod (_,_,b) -> (not (Termops.dependent sigma (EC.mkRel 1) b))
     | _  -> false
 
 
-let dest_coq_impl c =
-  match TR.kind_of_term c with
+let dest_coq_impl sigma c =
+  match EC.kind sigma c with
     | TR.Prod (_,b,c) ->
 (*i            print_constr_pair "impl" b c; i*)
             (b, c)
@@ -148,40 +149,40 @@ let new_acounter =
   let actr = ref 0 in
     fun () -> incr actr;!actr
 
-let is_coq_forall ct =
-  match TR.kind_of_term (RO.whd_betaiota Evd.empty ct) with
-    | TR.Prod (_,_,b) -> Termops.dependent (TR.mkRel 1) b
+let is_coq_forall sigma ct =
+  match EC.kind sigma (RO.whd_betaiota Evd.empty ct) with
+    | TR.Prod (_,_,b) -> Termops.dependent sigma (EC.mkRel 1) b
     | _  -> false
 
 (* return the bounded variable (as a string) and the bounded term *)
-let dest_coq_forall ct =
-  match TR.kind_of_term (RO.whd_betaiota Evd.empty ct) with
+let dest_coq_forall sigma ct =
+  match EC.kind sigma (RO.whd_betaiota sigma ct) with
     | TR.Prod (_,_,b) ->
         let x ="jp_"^(string_of_int (new_counter())) in
-        let v = TR.mkVar (N.id_of_string x) in
-        let c = VR.subst1 v b in    (* substitute de Bruijn variable by [v] *)
+        let v = EC.mkVar (N.id_of_string x) in
+        let c = EC.Vars.subst1 v b in    (* substitute de Bruijn variable by [v] *)
 (*i        print_constr_pair "forall" v c; i*)
         (x, c)
     | _  -> jp_error "dest_coq_forall"
 
 
 (* Apply [ct] to [t]: *)
-let sAPP ct t =
-  match TR.kind_of_term (RO.whd_betaiota Evd.empty ct) with
+let sAPP sigma ct t =
+  match EC.kind sigma (RO.whd_betaiota Evd.empty ct) with
     | TR.Prod (_,_,b) ->
-        let c = VR.subst1 t b in
+        let c = EC.Vars.subst1 t b in
             c
     | _  -> jp_error "sAPP"
 
 
-let is_coq_exists ct =
-  if not (HP.is_conjunction ~strict:true ct) then false
-  else let (hdapp,args) = TR.decompose_app ct in
+let is_coq_exists sigma ct =
+  if not (HP.is_conjunction sigma ~strict:true ct) then false
+  else let (hdapp,args) = EC.decompose_app sigma ct in
      match args with
       | _::la::[] ->
            begin
             try
-              match TR.destLambda la with
+              match EC.destLambda sigma la with
                 | (N.Name _,_,_) -> true
                 | _ -> false
             with _ -> false
@@ -189,16 +190,16 @@ let is_coq_exists ct =
       | _ -> false
 
 (* return the bounded variable (as a string) and the bounded term *)
-let dest_coq_exists ct =
-  let (hdapp,args) = TR.decompose_app ct in
+let dest_coq_exists sigma ct =
+  let (hdapp,args) = EC.decompose_app sigma ct in
      match args with
       | _::la::[] ->
            begin
             try
-             match TR.destLambda la with
+             match EC.destLambda sigma la with
                     | (N.Name x,t1,t2) ->
-                         let v = TR.mkVar x in
-                         let t3 = VR.subst1 v t2 in
+                         let v = EC.mkVar x in
+                         let t3 = EC.Vars.subst1 v t2 in
 (*i                            print_constr_pair "exists" v t3; i*)
                             (N.string_of_id x, t3)
                     | _ -> jp_error "dest_coq_exists"
@@ -207,9 +208,9 @@ let dest_coq_exists ct =
       | _ -> jp_error "dest_coq_exists"
 
 
-let is_coq_and ct =
-  (HP.is_conjunction ~strict:true ct)
-  && List.length (snd (TR.decompose_app ct)) = 2
+let is_coq_and sigma ct =
+  (HP.is_conjunction sigma ~strict:true ct)
+  && List.length (snd (EC.decompose_app sigma ct)) = 2
 
 
 (* Parsing modules: *)
@@ -217,8 +218,8 @@ let is_coq_and ct =
 let jtbl = Hashtbl.create 53        (* associate for unknown Coq constr. *)
 let rtbl = Hashtbl.create 53        (* reverse table of [jtbl] *)
 
-let dest_coq_symb ct =
-    N.string_of_id (TR.destVar ct)
+let dest_coq_symb sigma ct =
+    N.string_of_id (EC.destVar sigma ct)
 
 (* provide new names for unknown Coq constr. *)
 (* [ct] is the unknown constr., string [s] is appended to the name encoding *)
@@ -231,54 +232,54 @@ let create_coq_name ct s =
           Hashtbl.add rtbl t ct;
           t
 
-let dest_coq_app ct s =
-    let (hd, args) = TR.decompose_app ct in
+let dest_coq_app sigma ct s =
+    let (hd, args) = EC.decompose_app sigma ct in
 (*i        print_constr hd;
         print_constr_list args; i*)
-       if TR.isVar hd then
-          (dest_coq_symb hd, args)
+       if EC.isVar sigma hd then
+          (dest_coq_symb sigma hd, args)
        else                         (* unknown constr *)
           (create_coq_name hd s, args)
 
-let rec parsing2 c =        (* for function symbols, variables, constants *)
-    if (TR.isApp c) then    (* function symbol? *)
-        let (f,args) = dest_coq_app c "fun_" in
-            JT.fun_ f (List.map parsing2 args)
-    else if TR.isVar c then (* identifiable variable or constant *)
-            JT.var_ (dest_coq_symb c)
+let rec parsing2 sigma c =        (* for function symbols, variables, constants *)
+    if (EC.isApp sigma c) then    (* function symbol? *)
+        let (f,args) = dest_coq_app sigma c "fun_" in
+            JT.fun_ f (List.map (parsing2 sigma) args)
+    else if EC.isVar sigma c then (* identifiable variable or constant *)
+            JT.var_ (dest_coq_symb sigma c)
     else                    (* unknown constr *)
             JT.var_ (create_coq_name c "var_")
 
 (* the main parsing function *)
-let rec parsing c =
-    let ct = Reduction.whd_all (Global.env ()) c in
+let rec parsing sigma c =
+    let ct = RO.whd_all (Global.env ()) sigma c in
 (*    let ct = Reduction.whd_betaiotazeta (Global.env ()) c in *)
-    if is_coq_true ct then
+    if is_coq_true sigma ct then
        JT.true_
-    else if is_coq_false ct then
+    else if is_coq_false sigma ct then
        JT.false_
-    else if is_coq_not ct then
-        JT.not_ (parsing (dest_coq_not ct))
-    else if is_coq_impl ct then
-        let (t1,t2) = dest_coq_impl ct in
-            JT.imp_ (parsing t1) (parsing t2)
-    else if is_coq_or ct then
-        let (t1,t2) = dest_coq_or ct in
-            JT.or_ (parsing t1) (parsing t2)
-    else if is_coq_and ct then
-        let (t1,t2) = dest_coq_and ct in
-            JT.and_ (parsing t1) (parsing t2)
-    else if is_coq_forall ct then
-        let (v,t) = dest_coq_forall ct in
-            JT.forall v (parsing t)
-    else if is_coq_exists ct then
-        let (v,t) = dest_coq_exists ct in
-            JT.exists v (parsing t)
-    else if TR.isApp ct then            (* predicate symbol with arguments *)
-        let (p,args) = dest_coq_app ct "P_" in
-            JT.pred_ p (List.map parsing2 args)
-    else if TR.isVar ct then            (* predicate symbol without arguments *)
-        let p = dest_coq_symb ct in
+    else if is_coq_not sigma ct then
+        JT.not_ (parsing sigma (dest_coq_not sigma ct))
+    else if is_coq_impl sigma ct then
+        let (t1,t2) = dest_coq_impl sigma ct in
+            JT.imp_ (parsing sigma t1) (parsing sigma t2)
+    else if is_coq_or sigma ct then
+        let (t1,t2) = dest_coq_or sigma ct in
+            JT.or_ (parsing sigma t1) (parsing sigma t2)
+    else if is_coq_and sigma ct then
+        let (t1,t2) = dest_coq_and sigma ct in
+            JT.and_ (parsing sigma t1) (parsing sigma t2)
+    else if is_coq_forall sigma ct then
+        let (v,t) = dest_coq_forall sigma ct in
+            JT.forall v (parsing sigma t)
+    else if is_coq_exists sigma ct then
+        let (v,t) = dest_coq_exists sigma ct in
+            JT.exists v (parsing sigma t)
+    else if EC.isApp sigma ct then            (* predicate symbol with arguments *)
+        let (p,args) = dest_coq_app sigma ct "P_" in
+            JT.pred_ p (List.map (parsing2 sigma) args)
+    else if EC.isVar sigma ct then            (* predicate symbol without arguments *)
+        let p = dest_coq_symb sigma ct in
             JT.pred_ p []
     else                                (* unknown predicate *)
         JT.pred_ (create_coq_name ct "Q_") []
@@ -297,11 +298,11 @@ let rec constr_of_jterm t =
      let v = JT.dest_var t in
      try
         Hashtbl.find rtbl v
-     with Not_found -> TR.mkVar (N.id_of_string v)
+     with Not_found -> EC.mkVar (N.id_of_string v)
   else if (JT.is_fun_term t) then       (* a function symbol *)
      let (f,ts) = JT.dest_fun t in
-     let f' = try Hashtbl.find rtbl f with Not_found -> TR.mkVar (N.id_of_string f) in
-        TR.mkApp (f', Array.of_list (List.map constr_of_jterm ts))
+     let f' = try Hashtbl.find rtbl f with Not_found -> EC.mkVar (N.id_of_string f) in
+        EC.mkApp (f', Array.of_list (List.map constr_of_jterm ts))
   else jp_error "constr_of_jterm"
 
 
@@ -333,7 +334,7 @@ let dyn_andr =
 (* For example, the following implements the [and-left] rule: *)
 let dyn_andl id =   (* [id1]: left child; [id2]: right child *)
   let id1 = (short_addr (id^"_1")) and id2 = (short_addr (id^"_2")) in
-    (TCL.New.tclTHEN (T.simplest_elim (TR.mkVar (short_addr id))) (T.intros_using [id1;id2]))
+    (TCL.New.tclTHEN (T.simplest_elim (EC.mkVar (short_addr id))) (T.intros_using [id1;id2]))
 
 let dyn_orr1 =
   T.left Misctypes.NoBindings
@@ -343,7 +344,7 @@ let dyn_orr2 =
 
 let dyn_orl id =
   let id1 = (short_addr (id^"_1")) and id2 = (short_addr (id^"_2")) in
-    (TCL.New.tclTHENS (T.simplest_elim (TR.mkVar (short_addr id)))
+    (TCL.New.tclTHENS (T.simplest_elim (EC.mkVar (short_addr id)))
                   [T.intro_using id1; T.intro_using id2])
 
 let dyn_negr id =
@@ -351,7 +352,7 @@ let dyn_negr id =
      T.Simple.intro (short_addr id1)
 
 let dyn_negl id =
-  T.simplest_elim (TR.mkVar (short_addr id))
+  T.simplest_elim (EC.mkVar (short_addr id))
 
 let dyn_impr id =
   let id1 = id^"_1_1" in
@@ -360,12 +361,14 @@ let dyn_impr id =
 let dyn_impl id =
   Proofview.Goal.nf_enter { enter = begin fun gl ->
   let t = TM.New.pf_get_hyp_typ (short_addr id) gl in
-    let ct = Reduction.whd_all (Global.env ()) t in   (* unfolding *)
-    let (a,b) = dest_coq_impl ct in
+  let sigma = Tacmach.New.project gl in
+  let env = Proofview.Goal.env gl in
+    let ct = RO.whd_all env sigma t in   (* unfolding *)
+    let (a,b) = dest_coq_impl sigma ct in
     let refined = Refine.refine { run = begin fun sigma ->
       let env = Proofview.Goal.env gl in
       let Sigma (e, h, p) = Evarutil.new_evar env sigma a in
-      let c = TR.mkApp (TR.mkVar (short_addr id), [|e|]) in
+      let c = EC.mkApp (EC.mkVar (short_addr id), [|e|]) in
       Sigma (c, h, p)
     end } in
       let id2 = (short_addr (id^"_1_2")) in
@@ -381,12 +384,13 @@ let dyn_alll id id2 t gl =
   let id' = short_addr id in
   let id2' = short_addr id2 in
   let ct = TM.pf_get_hyp_typ gl id' in
-    let ct' = Reduction.whd_all (Global.env ()) ct in   (* unfolding *)
-    let ta = sAPP ct' t in
-       Proofview.V82.of_tactic (TCL.New.tclTHENS (T.cut ta) [T.intro_using id2'; T.apply (TR.mkVar id')]) gl
+  let sigma = TM.project gl in
+    let ct' = RO.whd_all (Global.env ()) sigma ct in   (* unfolding *)
+    let ta = sAPP sigma ct' t in
+       Proofview.V82.of_tactic (TCL.New.tclTHENS (T.cut ta) [T.intro_using id2'; T.apply (EC.mkVar id')]) gl
 
 let dyn_exl id id2 c = (* [c] must be an eigenvariable *)
-  (TCL.New.tclTHEN (T.simplest_elim (TR.mkVar (short_addr id)))
+  (TCL.New.tclTHEN (T.simplest_elim (EC.mkVar (short_addr id)))
                (T.intros_using [(N.id_of_string c);(short_addr id2)]))
 
 let dyn_exr t =
@@ -448,7 +452,7 @@ let do_coq_proof tr =
    lazy substitution may happen. They are recorded in [rtbl]. *)
 let reg_unif_subst t1 t2 =
   let (v,_,_) = JT.dest_all t1 in
-    Hashtbl.add rtbl v (TR.mkVar (N.id_of_string (JT.dest_var t2)))
+    Hashtbl.add rtbl v (EC.mkVar (N.id_of_string (JT.dest_var t2)))
 
 let count_jpbranch one_inf =
     let (rule, (_, t1), (_, t2)) = one_inf in
@@ -498,7 +502,7 @@ let jp limits gls =
      Hashtbl.clear jtbl;    (* empty the hash tables *)
      Hashtbl.clear rtbl;
      Hashtbl.clear assoc_addr;
-     let t = parsing ct in
+     let t = parsing (TM.project gls) ct in
 (*i     JT.print_term stdout t; i*)
         try
         let p = (J.prover limits [] t) in
@@ -518,7 +522,7 @@ let jp limits gls =
 (* an unfailed generalization procedure *)
 let non_dep_gen b gls =
   let concl = TM.pf_concl gls in
-      if (not (Termops.dependent b concl)) then
+      if (not (Termops.dependent (TM.project gls) b concl)) then
         Proofview.V82.of_tactic (T.generalize [b]) gls
       else
          TCL.tclIDTAC gls
@@ -534,10 +538,10 @@ let rec unfail_gen = function
 (* no argument, which stands for no multiplicity limit *)
 let jp gls =
   let ls = List.map (fst) (TM.pf_hyps_types gls) in
-(*i     T.generalize (List.map TR.mkVar ls) gls i*)
+(*i     T.generalize (List.map EC.mkVar ls) gls i*)
     (* generalize the context *)
     TCL.tclTHEN (TCL.tclTRY T.red_in_concl)
-                (TCL.tclTHEN (unfail_gen (List.map TR.mkVar ls))
+                (TCL.tclTHEN (unfail_gen (List.map EC.mkVar ls))
                              (jp None)) gls
 *)
 (*
@@ -550,7 +554,7 @@ let dyn_jp l gls =
 let jpn n gls =
   let ls = List.map (fst) (TM.pf_hyps_types gls) in
   TCL.tclTHEN (TCL.tclTRY (Proofview.V82.of_tactic T.red_in_concl))
-              (TCL.tclTHEN (unfail_gen (List.map TR.mkVar ls))
+              (TCL.tclTHEN (unfail_gen (List.map EC.mkVar ls))
                          (jp n)) gls
 
 TACTIC EXTEND jprover
