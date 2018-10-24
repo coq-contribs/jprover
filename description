@@ -9,3 +9,4 @@ necessary ML-codes from MetaPRL and then adapted it to Coq.
 Keywords: Decision procedures, First-order logic, Intuitionistic logic, Theorem proving, Proof search
 Category: Miscellaneous/Coq Extensions and Computer Science/Decision Procedures
 Date: 2002-04 (contribution since January 2009)
+Status: Unmaintained
